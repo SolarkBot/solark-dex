@@ -27,7 +27,6 @@ import {
   getTokenDisplaySymbol,
   type TokenConfig,
 } from "@/lib/tokens";
-import { withBasePath } from "@/lib/app-paths";
 
 const TIMELINE = {
   locatingAgents: 380,
@@ -272,7 +271,7 @@ export function useSwapFlow() {
           slippageBps: String(DEFAULT_SLIPPAGE_BPS),
         });
         const order = await fetchJson<JupiterOrderResponse>(
-          withBasePath(`/api/jupiter/order?${params.toString()}`),
+          `/api/jupiter/order?${params.toString()}`,
           { signal: controller.signal },
         );
 
@@ -464,7 +463,7 @@ export function useSwapFlow() {
         taker: walletAddress,
       });
       const order = await fetchJson<JupiterOrderResponse>(
-        withBasePath(`/api/jupiter/order?${orderParams.toString()}`),
+        `/api/jupiter/order?${orderParams.toString()}`,
       );
 
       if (executionRef.current !== executionId) {

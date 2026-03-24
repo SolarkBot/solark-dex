@@ -14,7 +14,6 @@ import {
   getTokenDisplaySymbol,
   type TokenConfig,
 } from "@/lib/tokens";
-import { withBasePath } from "@/lib/app-paths";
 
 type TokenSearchResult = {
   decimals: number | null;
@@ -79,7 +78,7 @@ async function fetchTokenSearchResults(query: string) {
     params.set("query", query.trim());
   }
 
-  const response = await fetch(withBasePath(`/api/jupiter/tokens?${params.toString()}`), {
+  const response = await fetch(`/api/jupiter/tokens?${params.toString()}`, {
     cache: "no-store",
   });
   const data = (await response.json().catch(() => null)) as

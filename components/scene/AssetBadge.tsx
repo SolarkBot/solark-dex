@@ -3,7 +3,6 @@
 import { Billboard, Html, Text } from "@react-three/drei";
 import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
-import { withBasePath } from "@/lib/app-paths";
 
 type SharedAssetBadgeProps = {
   accent: string;
@@ -30,10 +29,10 @@ function buildSceneLogoUri(logoUri?: string | null) {
   }
 
   if (logoUri.startsWith("/") || logoUri.startsWith("data:") || logoUri.startsWith("blob:")) {
-    return logoUri.startsWith("/") ? withBasePath(logoUri) : logoUri;
+    return logoUri;
   }
 
-  return withBasePath(`/api/assets/logo?src=${encodeURIComponent(logoUri)}`);
+  return `/api/assets/logo?src=${encodeURIComponent(logoUri)}`;
 }
 
 function useBadgeTexture(logoUri?: string | null) {

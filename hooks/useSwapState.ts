@@ -27,7 +27,6 @@ import {
   isValidMintAddress,
   resolveTokenConfig,
 } from "@/lib/solana";
-import { withBasePath } from "@/lib/app-paths";
 
 const sleep = (ms: number) =>
   new Promise<void>((resolve) => {
@@ -229,7 +228,7 @@ export function useSwapState() {
           slippageBps: String(slippageBps),
         });
         const order = await fetchJson<JupiterOrderResponse>(
-          withBasePath(`/api/jupiter/order?${params.toString()}`),
+          `/api/jupiter/order?${params.toString()}`,
           { signal: controller.signal },
         );
 
@@ -427,7 +426,7 @@ export function useSwapState() {
         taker: walletAddress,
       });
       const order = await fetchJson<JupiterOrderResponse>(
-        withBasePath(`/api/jupiter/order?${orderParams.toString()}`),
+        `/api/jupiter/order?${orderParams.toString()}`,
       );
 
       if (order.errorCode || !order.transaction) {

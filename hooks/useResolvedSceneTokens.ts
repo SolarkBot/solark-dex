@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { withBasePath } from "@/lib/app-paths";
 import { type TokenConfig } from "@/lib/tokens";
 
 type JupiterTokenSearchItem = {
@@ -20,7 +19,7 @@ async function fetchSceneLogo(mint: string) {
   }
 
   const params = new URLSearchParams({ query: mint });
-  const request = fetch(withBasePath(`/api/jupiter/tokens?${params.toString()}`), {
+  const request = fetch(`/api/jupiter/tokens?${params.toString()}`, {
     cache: "no-store",
   })
     .then(async (response) => {

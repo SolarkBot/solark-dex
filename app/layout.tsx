@@ -29,7 +29,7 @@ const label = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "Solark DEX",
   description:
-    "A cinematic Solana swap experience served from SolarkBot's dedicated /dex entrypoint.",
+    "A cinematic Solana swap experience served directly from dex.solarkbot.xyz.",
 };
 
 export default function RootLayout({
