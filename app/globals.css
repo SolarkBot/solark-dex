@@ -1,0 +1,360 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #04070b;
+  --bg-elevated: rgba(8, 12, 17, 0.72);
+  --bg-strong: rgba(7, 10, 15, 0.9);
+  --line: rgba(163, 192, 226, 0.14);
+  --line-strong: rgba(163, 192, 226, 0.28);
+  --text: #f7fbff;
+  --muted: #9eafc2;
+  --cyan: #91e6ff;
+  --cyan-strong: #27ccff;
+  --success: #a6ffd2;
+  --danger: #ff8c8c;
+  --panel-top: rgba(10, 14, 19, 0.84);
+  --panel-bottom: rgba(7, 10, 15, 0.74);
+  --panel-accent: rgba(145, 230, 255, 0.06);
+  --panel-shadow: rgba(0, 0, 0, 0.34);
+  --panel-inset: rgba(255, 255, 255, 0.03);
+  --control-glow: rgba(145, 230, 255, 0.08);
+  --control-scan: rgba(145, 230, 255, 0.04);
+  --option-bg: #091017;
+  --option-text: #ffffff;
+  --immersive-radial: rgba(0, 0, 0, 0.08);
+  --immersive-top: rgba(2, 4, 8, 0.06);
+  --immersive-bottom: rgba(2, 4, 8, 0.34);
+  --scene-vignette-end: rgba(4, 7, 11, 0.34);
+  --badge-bg: rgba(7, 19, 29, 0.72);
+  --badge-border: rgba(255, 255, 255, 0.1);
+  --badge-inner-bg: rgba(255, 255, 255, 0.04);
+  --badge-shadow: rgba(0, 0, 0, 0.28);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark light;
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 20% 12%, rgba(56, 112, 255, 0.14), transparent 28%),
+    radial-gradient(circle at 78% 18%, rgba(0, 225, 255, 0.12), transparent 24%),
+    radial-gradient(circle at 50% 100%, rgba(89, 137, 255, 0.1), transparent 38%),
+    linear-gradient(180deg, #05080d 0%, #04070b 52%, #030509 100%);
+  color: var(--text);
+  font-family: var(--font-body), sans-serif;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #eef5ff;
+    --bg-elevated: rgba(255, 255, 255, 0.78);
+    --bg-strong: rgba(232, 241, 252, 0.94);
+    --line: rgba(74, 119, 176, 0.18);
+    --line-strong: rgba(74, 119, 176, 0.32);
+    --text: #10233d;
+    --muted: #607491;
+    --cyan: #4c8eff;
+    --cyan-strong: #246dff;
+    --success: #0f9d6f;
+    --danger: #d35f5f;
+    --panel-top: rgba(255, 255, 255, 0.76);
+    --panel-bottom: rgba(231, 241, 255, 0.74);
+    --panel-accent: rgba(87, 146, 255, 0.1);
+    --panel-shadow: rgba(117, 152, 198, 0.22);
+    --panel-inset: rgba(255, 255, 255, 0.68);
+    --control-glow: rgba(98, 157, 255, 0.18);
+    --control-scan: rgba(98, 157, 255, 0.08);
+    --option-bg: #f3f8ff;
+    --option-text: #10233d;
+    --immersive-radial: rgba(255, 255, 255, 0.16);
+    --immersive-top: rgba(255, 255, 255, 0.08);
+    --immersive-bottom: rgba(208, 226, 246, 0.24);
+    --scene-vignette-end: rgba(220, 235, 255, 0.26);
+    --badge-bg: rgba(255, 255, 255, 0.76);
+    --badge-border: rgba(102, 139, 184, 0.24);
+    --badge-inner-bg: rgba(76, 142, 255, 0.08);
+    --badge-shadow: rgba(130, 163, 205, 0.24);
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    background:
+      radial-gradient(circle at 18% 10%, rgba(135, 191, 255, 0.26), transparent 26%),
+      radial-gradient(circle at 84% 14%, rgba(130, 224, 255, 0.24), transparent 22%),
+      radial-gradient(circle at 52% 100%, rgba(123, 160, 255, 0.18), transparent 34%),
+      linear-gradient(180deg, #f6fbff 0%, #eef5ff 54%, #e4eefb 100%);
+  }
+
+  body::before {
+    opacity: 0.36;
+    background-image:
+      linear-gradient(rgba(79, 122, 172, 0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(79, 122, 172, 0.06) 1px, transparent 1px);
+    mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.06), rgba(0, 0, 0, 0.28));
+  }
+
+  body::after {
+    opacity: 0.18;
+    background-image:
+      radial-gradient(rgba(76, 132, 196, 0.42) 0.6px, transparent 0.8px),
+      radial-gradient(rgba(117, 181, 255, 0.3) 0.6px, transparent 0.8px);
+    mix-blend-mode: multiply;
+  }
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+body::before {
+  opacity: 0.32;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 110px 110px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.8));
+}
+
+body::after {
+  opacity: 0.14;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.85) 0.6px, transparent 0.8px),
+    radial-gradient(rgba(255, 255, 255, 0.65) 0.6px, transparent 0.8px);
+  background-position: 0 0, 23px 19px;
+  background-size: 28px 28px;
+  mix-blend-mode: soft-light;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+.font-display {
+  font-family: var(--font-display), sans-serif;
+}
+
+.font-label {
+  font-family: var(--font-label), monospace;
+}
+
+::selection {
+  background: rgba(39, 204, 255, 0.32);
+  color: white;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.immersive-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 72%, var(--immersive-radial), transparent 28%),
+    linear-gradient(180deg, var(--immersive-top), var(--immersive-bottom));
+}
+
+.hud-panel,
+.hud-chip,
+.control-shell,
+.control-field {
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(180deg, var(--panel-top), var(--panel-bottom)),
+    linear-gradient(120deg, var(--panel-accent), transparent 42%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow:
+    0 28px 70px var(--panel-shadow),
+    inset 0 1px 0 var(--panel-inset);
+}
+
+.control-shell {
+  position: relative;
+  overflow: hidden;
+}
+
+.control-shell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 0%, var(--control-glow), transparent 34%),
+    linear-gradient(90deg, transparent, var(--control-scan), transparent);
+}
+
+.control-field {
+  border-radius: 1.2rem;
+}
+
+.token-select,
+.amount-input {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+}
+
+.token-select {
+  appearance: none;
+}
+
+.token-select option {
+  background: var(--option-bg);
+  color: var(--option-text);
+}
+
+.scene-vignette {
+  background: radial-gradient(circle at center, transparent 0%, transparent 48%, var(--scene-vignette-end) 100%);
+}
+
+.swap-dock {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  justify-content: center;
+  padding-inline: 1rem;
+  padding-top: 7rem;
+  padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+  pointer-events: none;
+}
+
+.swap-dock-panel {
+  width: min(100%, 36rem);
+  max-height: calc(100dvh - 8rem);
+}
+
+.swap-controls {
+  width: 100%;
+}
+
+.swap-button {
+  border: 1px solid rgba(145, 230, 255, 0.2);
+  background:
+    linear-gradient(135deg, rgba(145, 230, 255, 0.95), rgba(39, 204, 255, 0.78)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent);
+  color: #041118;
+  box-shadow:
+    0 0 0 1px rgba(145, 230, 255, 0.08),
+    0 16px 36px rgba(39, 204, 255, 0.22);
+}
+
+.swap-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+  box-shadow: none;
+}
+
+@media (max-height: 820px) {
+  .swap-dock {
+    padding-top: 5.5rem;
+    padding-bottom: max(env(safe-area-inset-bottom), 0.625rem);
+  }
+
+  .swap-dock-panel {
+    width: min(100%, 34rem);
+    max-height: calc(100dvh - 6.5rem);
+  }
+
+  .swap-controls {
+    border-radius: 1.15rem;
+    padding: 0.35rem;
+  }
+
+  .swap-controls-grid {
+    gap: 0.45rem;
+  }
+
+  .swap-controls-field {
+    border-radius: 1rem;
+    padding: 0.55rem 0.75rem;
+  }
+
+  .swap-controls-button {
+    height: 2.45rem;
+    border-radius: 0.9rem;
+  }
+
+  .swap-controls-footer {
+    margin-top: 0.45rem;
+    gap: 0.3rem;
+  }
+}
+
+@media (max-height: 720px) {
+  .swap-dock {
+    padding-top: 5rem;
+    padding-inline: 0.75rem;
+    padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+  }
+
+  .swap-dock-panel {
+    width: min(100%, 32rem);
+    max-height: calc(100dvh - 5.75rem);
+  }
+
+  .swap-controls {
+    border-radius: 1rem;
+    padding: 0.25rem;
+  }
+
+  .swap-controls-grid {
+    gap: 0.35rem;
+  }
+
+  .swap-controls-field {
+    border-radius: 0.92rem;
+    padding: 0.45rem 0.65rem;
+  }
+
+  .swap-controls-button {
+    height: 2.2rem;
+    font-size: 0.72rem;
+  }
+
+  .swap-controls-footer {
+    margin-top: 0.3rem;
+    padding-inline: 0.15rem;
+  }
+}
