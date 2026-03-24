@@ -36,6 +36,8 @@ const TIMELINE = {
 
 const DEFAULT_SLIPPAGE_BPS = 50;
 const QUOTE_DEBOUNCE_MS = 350;
+const SWAP_CONFIRMATION_TIMEOUT_MS = 25000;
+const SWAP_CONFIRMATION_POLL_MS = 1200;
 
 export const CUSTOM_TOKEN_OPTION = "__custom__";
 
@@ -156,7 +158,8 @@ function getSwapFailureDetails(caughtError: unknown) {
   if (
     normalized.includes("could not settle") ||
     normalized.includes("unable to execute jupiter swap") ||
-    normalized.includes("failed to decode signed transaction")
+    normalized.includes("failed to decode signed transaction") ||
+    normalized.includes("did not include a transaction signature")
   ) {
     return {
       error: message,
@@ -170,6 +173,43 @@ function getSwapFailureDetails(caughtError: unknown) {
     shouldRecoverToReady: true,
     status: fallback.status,
   };
+}
+
+async function waitForSignatureConfirmation(params: {
+  connection: { getSignatureStatuses: (signatures: string[]) => Promise<{ value: Array<{ confirmationStatus?: string | null; err?: unknown } | null> }> };
+  executionId: number;
+  executionRef: { current: number };
+  signature: string;
+}) {
+  const { connection, executionId, executionRef, signature } = params;
+  const startedAt = Date.now();
+
+  while (Date.now() - startedAt < SWAP_CONFIRMATION_TIMEOUT_MS) {
+    if (executionRef.current !== executionId) {
+      return false;
+    }
+
+    const statuses = await connection.getSignatureStatuses([signature]);
+    const status = statuses.value[0];
+
+    if (status?.err) {
+      throw new Error("Transaction failed on-chain.");
+    }
+
+    if (
+      status &&
+      (status.confirmationStatus === "confirmed" ||
+        status.confirmationStatus === "finalized")
+    ) {
+      return true;
+    }
+
+    await new Promise<void>((resolve) => {
+      window.setTimeout(resolve, SWAP_CONFIRMATION_POLL_MS);
+    });
+  }
+
+  throw new Error("Transaction confirmation timed out.");
 }
 
 export function useSwapFlow() {
@@ -586,6 +626,20 @@ export function useSwapFlow() {
         throw new Error(execution.error || "Jupiter could not settle the signed swap.");
       }
 
+      const signature = execution.signature?.trim();
+
+      if (!signature) {
+        throw new Error("Jupiter execution did not include a transaction signature.");
+      }
+
+      setStatus("Swap submitted. Waiting for Solana confirmation.");
+      await waitForSignatureConfirmation({
+        connection,
+        executionId,
+        executionRef,
+        signature,
+      });
+
       const outputBaseUnits =
         execution.outputAmountResult ||
         execution.totalOutputAmount ||
@@ -603,7 +657,7 @@ export function useSwapFlow() {
         receivedLabel: formatTokenAmount(receivedAmount, toToken),
         fromToken,
         routeLabel: liveQuote.routeLabel,
-        signature: execution.signature || order.requestId,
+        signature,
         timestamp: new Date().toLocaleTimeString("en-US", {
           hour: "2-digit",
           minute: "2-digit",

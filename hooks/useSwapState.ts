@@ -33,6 +33,8 @@ const sleep = (ms: number) =>
   new Promise<void>((resolve) => {
     window.setTimeout(resolve, ms);
   });
+const SWAP_CONFIRMATION_TIMEOUT_MS = 25000;
+const SWAP_CONFIRMATION_POLL_MS = 1200;
 
 async function fetchJson<T>(input: RequestInfo | URL, init?: RequestInit) {
   const response = await fetch(input, {
@@ -78,6 +80,47 @@ function bytesToBase64(value: Uint8Array) {
   }
 
   return window.btoa(binary);
+}
+
+async function waitForSignatureConfirmation(params: {
+  connection: {
+    getSignatureStatuses: (
+      signatures: string[],
+    ) => Promise<{
+      value: Array<{ confirmationStatus?: string | null; err?: unknown } | null>;
+    }>;
+  };
+  executionId: number;
+  executionRef: { current: number };
+  signature: string;
+}) {
+  const { connection, executionId, executionRef, signature } = params;
+  const startedAt = Date.now();
+
+  while (Date.now() - startedAt < SWAP_CONFIRMATION_TIMEOUT_MS) {
+    if (executionRef.current !== executionId) {
+      return false;
+    }
+
+    const statuses = await connection.getSignatureStatuses([signature]);
+    const status = statuses.value[0];
+
+    if (status?.err) {
+      throw new Error("Transaction failed on-chain.");
+    }
+
+    if (
+      status &&
+      (status.confirmationStatus === "confirmed" ||
+        status.confirmationStatus === "finalized")
+    ) {
+      return true;
+    }
+
+    await sleep(SWAP_CONFIRMATION_POLL_MS);
+  }
+
+  throw new Error("Transaction confirmation timed out.");
 }
 
 export function useSwapState() {
@@ -500,8 +543,21 @@ export function useSwapState() {
         throw new Error(execution.error || "The signed swap could not be settled.");
       }
 
+      const signature = execution.signature?.trim();
+
+      if (!signature) {
+        throw new Error("Jupiter execution did not include a transaction signature.");
+      }
+
       setPhase("exchange");
-      setStatus("Jupiter is confirming the signed swap.");
+      setStatus("Swap submitted. Waiting for Solana confirmation.");
+
+      await waitForSignatureConfirmation({
+        connection,
+        executionId,
+        executionRef,
+        signature,
+      });
 
       await sleep(900);
       if (executionRef.current !== executionId) {
@@ -520,7 +576,7 @@ export function useSwapState() {
             ? Number(execution.outputAmountResult) / 10 ** preparedSwap.toToken.decimals
             : preparedSwap.quote.estimatedAmountOut,
         priceImpactPct: preparedSwap.quote.priceImpactPct,
-        signature: execution.signature || order.requestId,
+        signature,
         toToken: preparedSwap.toToken,
       };
 
