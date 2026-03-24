@@ -5,6 +5,7 @@ import {
   ConnectionProvider,
   WalletProvider,
 } from "@solana/wallet-adapter-react";
+import { PhantomWalletAdapter } from "@solana/wallet-adapter-phantom";
 import { SolflareWalletAdapter } from "@solana/wallet-adapter-solflare";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
@@ -17,6 +18,7 @@ export function SolanaWalletProvider({
 }) {
   const wallets = useMemo(
     () => [
+      new PhantomWalletAdapter(),
       new SolflareWalletAdapter(),
     ],
     [],

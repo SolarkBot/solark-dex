@@ -20,6 +20,7 @@ function getWalletPriority(state: WalletReadyState) {
 
 export function WalletButton() {
   const {
+    connect,
     connected,
     connecting,
     disconnect,
@@ -29,6 +30,7 @@ export function WalletButton() {
     wallets,
   } = useWallet();
   const [open, setOpen] = useState(false);
+  const [pendingConnectName, setPendingConnectName] = useState<string | null>(null);
 
   const uniqueWallets = useMemo(() => {
     const deduped = new Map<string, (typeof wallets)[number]>();
@@ -63,6 +65,27 @@ export function WalletButton() {
       setOpen(false);
     }
   }, [connected, connecting]);
+
+  useEffect(() => {
+    if (
+      !pendingConnectName ||
+      connecting ||
+      connected ||
+      wallet?.adapter.name !== pendingConnectName
+    ) {
+      return;
+    }
+
+    void connect().catch(() => {
+      setPendingConnectName(null);
+    });
+  }, [connect, connected, connecting, pendingConnectName, wallet]);
+
+  useEffect(() => {
+    if (connected || !wallet || wallet.adapter.name === pendingConnectName) {
+      setPendingConnectName(null);
+    }
+  }, [connected, pendingConnectName, wallet]);
 
   return (
     <div className="relative">
@@ -130,6 +153,7 @@ export function WalletButton() {
                   disabled={disabled}
                   key={entry.adapter.name}
                   onClick={() => {
+                    setPendingConnectName(entry.adapter.name);
                     select(entry.adapter.name);
                     setOpen(false);
                   }}
