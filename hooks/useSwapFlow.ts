@@ -41,6 +41,12 @@ const SWAP_CONFIRMATION_POLL_MS = 1200;
 
 export const CUSTOM_TOKEN_OPTION = "__custom__";
 
+type QuoteContext = {
+  amountInBaseUnits: string;
+  inputMint: string;
+  outputMint: string;
+};
+
 function clearTimers(timeouts: number[]) {
   timeouts.forEach((timeout) => window.clearTimeout(timeout));
 }
@@ -231,6 +237,7 @@ export function useSwapFlow() {
   const [receipt, setReceipt] = useState<MockSwapResult | null>(null);
   const [sequenceId, setSequenceId] = useState(0);
   const [quote, setQuote] = useState<SwapQuote | null>(null);
+  const [quoteContext, setQuoteContext] = useState<QuoteContext | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
   const quoteRef = useRef<SwapQuote | null>(null);
   const phaseRef = useRef<SwapFlowPhase>("idle");
@@ -254,7 +261,11 @@ export function useSwapFlow() {
     hasAmount &&
     !resolvingCustom &&
     !quoteLoading &&
-    !!quote;
+    !!quote &&
+    !!quoteContext &&
+    quoteContext.inputMint === fromToken.mint &&
+    quoteContext.outputMint === toToken.mint &&
+    quoteContext.amountInBaseUnits === amountInBaseUnits;
 
   useEffect(() => {
     quoteRef.current = quote;
@@ -269,9 +280,12 @@ export function useSwapFlow() {
     phaseTimersRef.current = [];
     quoteRequestRef.current += 1;
     executionRef.current += 1;
+    setPhase("idle");
+    setStatus("Pick a route and enter an amount to wake the market.");
     setError(null);
     setReceipt(null);
     setQuote(null);
+    setQuoteContext(null);
     setQuoteLoading(false);
   }, []);
 
@@ -285,6 +299,7 @@ export function useSwapFlow() {
 
     if (resolvingCustom) {
       setQuote(null);
+      setQuoteContext(null);
       setQuoteLoading(false);
       setPhase("tokenSelection");
       setStatus("Resolving custom contract address.");
@@ -293,6 +308,7 @@ export function useSwapFlow() {
 
     if (!validPair) {
       setQuote(null);
+      setQuoteContext(null);
       setQuoteLoading(false);
       setPhase("error");
       setStatus("Choose two different token desks.");
@@ -302,6 +318,7 @@ export function useSwapFlow() {
 
     if (!amount.trim()) {
       setQuote(null);
+      setQuoteContext(null);
       setQuoteLoading(false);
       setPhase("idle");
       setStatus("Pick a route and enter an amount to wake the market.");
@@ -310,6 +327,7 @@ export function useSwapFlow() {
 
     if (!hasAmount) {
       setQuote(null);
+      setQuoteContext(null);
       setQuoteLoading(false);
       setPhase("error");
       setStatus("Amount is invalid.");
@@ -370,6 +388,7 @@ export function useSwapFlow() {
   useEffect(() => {
     if (!amountInBaseUnits || !validPair || !hasAmount || resolvingCustom) {
       setQuote(null);
+      setQuoteContext(null);
       setQuoteLoading(false);
       return;
     }
@@ -396,6 +415,11 @@ export function useSwapFlow() {
 
         const nextQuote = normalizeOrderToQuote(order, fromToken, toToken, numericAmount);
         setQuote(nextQuote);
+        setQuoteContext({
+          amountInBaseUnits,
+          inputMint: fromToken.mint,
+          outputMint: toToken.mint,
+        });
         setError(null);
 
         if (
@@ -413,6 +437,7 @@ export function useSwapFlow() {
         }
 
         setQuote(null);
+        setQuoteContext(null);
         setPhase("error");
         setError(
           caughtError instanceof Error
@@ -549,8 +574,24 @@ export function useSwapFlow() {
     }
 
     if (!quote || !amountInBaseUnits || !hasAmount || !validPair) {
+      setQuote(null);
+      setQuoteContext(null);
       setPhase("error");
       setError("Enter a valid amount to generate a live route.");
+      setStatus("Quote unavailable.");
+      return;
+    }
+
+    if (
+      !quoteContext ||
+      quoteContext.inputMint !== fromToken.mint ||
+      quoteContext.outputMint !== toToken.mint ||
+      quoteContext.amountInBaseUnits !== amountInBaseUnits
+    ) {
+      setQuote(null);
+      setQuoteContext(null);
+      setPhase("error");
+      setError("Quote was stale after token change. Fetching a fresh route.");
       setStatus("Quote unavailable.");
       return;
     }
@@ -590,6 +631,11 @@ export function useSwapFlow() {
 
       const liveQuote = normalizeOrderToQuote(order, fromToken, toToken, numericAmount);
       setQuote(liveQuote);
+      setQuoteContext({
+        amountInBaseUnits,
+        inputMint: fromToken.mint,
+        outputMint: toToken.mint,
+      });
 
       const unsignedTransaction = VersionedTransaction.deserialize(
         base64ToBytes(order.transaction),
@@ -639,6 +685,10 @@ export function useSwapFlow() {
         executionRef,
         signature,
       });
+
+      if (executionRef.current !== executionId) {
+        return;
+      }
 
       const outputBaseUnits =
         execution.outputAmountResult ||
@@ -739,6 +789,7 @@ export function useSwapFlow() {
     numericAmount,
     publicKey,
     quote,
+    quoteContext,
     signTransaction,
     toToken,
     validPair,
