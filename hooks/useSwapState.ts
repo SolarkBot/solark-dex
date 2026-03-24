@@ -193,8 +193,8 @@ export function useSwapState() {
     if (!connected) {
       setStatus(
         quote
-          ? "Route ready. Connect Phantom or Solflare to execute it."
-          : "Connect Phantom or Solflare to request and execute Jupiter routes.",
+          ? "Route ready. Connect Phantom to execute it."
+          : "Connect Phantom to request and execute Jupiter routes.",
       );
       return;
     }
@@ -395,7 +395,7 @@ export function useSwapState() {
   const executeSwap = useCallback(async () => {
     if (!connected || !publicKey || !walletAddress) {
       setPhase("error");
-      setError("Connect Phantom or Solflare to execute the route.");
+      setError("Connect Phantom to execute the route.");
       setStatus("Wallet connection required.");
       return;
     }

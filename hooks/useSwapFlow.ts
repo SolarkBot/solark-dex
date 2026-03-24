@@ -108,6 +108,70 @@ function bytesToBase64(value: Uint8Array) {
   return window.btoa(binary);
 }
 
+function getSwapFailureDetails(caughtError: unknown) {
+  const fallback = {
+    error: "Live Jupiter swap failed.",
+    shouldRecoverToReady: true,
+    status: "Swap failed. Agents reclaiming their original cargo.",
+  };
+
+  if (!(caughtError instanceof Error)) {
+    return fallback;
+  }
+
+  const message = caughtError.message.trim() || fallback.error;
+  const normalized = message.toLowerCase();
+
+  if (
+    normalized.includes("rejected") ||
+    normalized.includes("declined") ||
+    normalized.includes("cancelled") ||
+    normalized.includes("canceled") ||
+    normalized.includes("denied") ||
+    normalized.includes("user rejected")
+  ) {
+    return {
+      error: "Signature request was rejected in the wallet.",
+      shouldRecoverToReady: true,
+      status: "Signature was rejected. The route is still ready to retry.",
+    };
+  }
+
+  if (normalized.includes("does not support transaction signing")) {
+    return {
+      error: "The connected wallet does not support transaction signing.",
+      shouldRecoverToReady: false,
+      status: "Wallet signature unavailable.",
+    };
+  }
+
+  if (normalized.includes("did not return a signable transaction")) {
+    return {
+      error: "Jupiter did not return a signable transaction for this route.",
+      shouldRecoverToReady: true,
+      status: "Route build failed. The quote is still ready to retry.",
+    };
+  }
+
+  if (
+    normalized.includes("could not settle") ||
+    normalized.includes("unable to execute jupiter swap") ||
+    normalized.includes("failed to decode signed transaction")
+  ) {
+    return {
+      error: message,
+      shouldRecoverToReady: true,
+      status: "Execution failed after signing. The quote is still ready to retry.",
+    };
+  }
+
+  return {
+    error: message,
+    shouldRecoverToReady: true,
+    status: fallback.status,
+  };
+}
+
 export function useSwapFlow() {
   const { connection } = useConnection();
   const { connected, publicKey, signTransaction } = useWallet();
@@ -432,7 +496,7 @@ export function useSwapFlow() {
   const beginSwap = useCallback(async () => {
     if (!connected || !publicKey || !walletAddress) {
       setPhase("error");
-      setError("Connect Phantom or Solflare to execute the route.");
+      setError("Connect Phantom to execute the route.");
       setStatus("Wallet connection required.");
       return;
     }
@@ -581,15 +645,19 @@ export function useSwapFlow() {
         return;
       }
 
+      const failure = getSwapFailureDetails(caughtError);
       clearTimers(phaseTimersRef.current);
       phaseTimersRef.current = [];
-      setError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : "Live Jupiter swap failed.",
-      );
+      setError(failure.error);
+
+      if (!failure.shouldRecoverToReady) {
+        setPhase("error");
+        setStatus(failure.status);
+        return;
+      }
+
       setPhase("recovering");
-      setStatus("Swap failed. Agents reclaiming their original cargo.");
+      setStatus(failure.status);
 
       phaseTimersRef.current.push(
         window.setTimeout(() => {
@@ -598,9 +666,8 @@ export function useSwapFlow() {
           }
 
           if (quoteRef.current) {
-            setError(null);
             setPhase("ready");
-            setStatus(getReadyStatus(connected, amount, fromToken, toToken));
+            setStatus("Quote still ready. Reopen the wallet to try again.");
             return;
           }
 

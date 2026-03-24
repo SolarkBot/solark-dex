@@ -34,7 +34,7 @@ NEXT_PUBLIC_SOLANA_RPC_ENDPOINT=https://solana-rpc.publicnode.com
 
 ## Notes
 
-- Wallet connectivity is wired for Phantom and Solflare.
+- Wallet connectivity is wired for Phantom only.
 - Jupiter Ultra order and execute calls are proxied through Next.js API routes so the API key stays server-side.
 - Quotes, supported token balances, and swaps are live for the tokens listed in `lib/tokens.ts`.
 - The browser no longer broadcasts or confirms swap transactions directly against the public Solana RPC during the main swap flow.

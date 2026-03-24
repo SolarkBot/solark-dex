@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useWallet } from "@solana/wallet-adapter-react";
-import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import SwapScene from "@/components/SwapScene";
 import { SwapPanel } from "@/components/SwapPanel";
+import { WalletButton } from "@/components/ui/WalletButton";
 import { useSwapState } from "@/hooks/useSwapState";
-import { shortenAddress } from "@/lib/solana";
 import { getTokenDisplaySymbol } from "@/lib/tokens";
 
 const DESKTOP_NAV_ITEMS = ["Swap", "Market", "Stake", "Governance"] as const;
@@ -25,11 +23,8 @@ const METRICS: Array<{ accent?: boolean; label: string; value: string }> = [
 
 export function SwapExperience() {
   const swap = useSwapState();
-  const { connected, publicKey } = useWallet();
-  const { setVisible } = useWalletModal();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
-  const walletLabel = connected && publicKey ? shortenAddress(publicKey, 3) : "Connect Wallet";
 
   useEffect(() => {
     const handlePointerDown = (event: PointerEvent) => {
@@ -111,16 +106,7 @@ export function SwapExperience() {
               <TopbarIcon icon="notifications" />
             </div>
 
-            <button
-              className="connect-wallet-btn flex items-center justify-center rounded-2xl px-4 py-2.5 text-sm font-bold text-[#042a2d] sm:px-5 min-[1100px]:min-w-[clamp(168px,15vw,190px)] min-[1100px]:px-6 min-[1100px]:py-3 min-[1100px]:text-[clamp(0.92rem,0.9vw,0.98rem)]"
-              onClick={() => setVisible(true)}
-              type="button"
-            >
-              <span className="hidden min-[1100px]:inline">{walletLabel}</span>
-              <span className="font-label text-[11px] font-semibold uppercase tracking-[0.16em] min-[1100px]:hidden">
-                {connected && publicKey ? shortenAddress(publicKey, 3) : "Wallet"}
-              </span>
-            </button>
+            <WalletButton />
           </div>
 
           <div
