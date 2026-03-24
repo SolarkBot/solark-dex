@@ -1,23 +1,15 @@
 import "server-only";
 
-const DEFAULT_JUPITER_SWAP_API_BASE_URL = "https://lite-api.jup.ag/swap/v1";
 const DEFAULT_JUPITER_ULTRA_API_BASE_URL = "https://api.jup.ag/ultra/v1";
 
 function getJupiterApiKey() {
   return process.env.JUP_API_KEY?.trim() || null;
 }
 
-function getJupiterApiBaseUrl(kind: "swap" | "ultra") {
-  if (kind === "swap") {
-    return (
-      process.env.JUP_SWAP_API_BASE_URL?.trim().replace(/\/$/, "") ||
-      DEFAULT_JUPITER_SWAP_API_BASE_URL
-    );
-  }
-
+function getJupiterApiBaseUrl() {
   return (
-    process.env.JUP_API_BASE_URL?.trim().replace(/\/$/, "") ||
     process.env.JUP_ULTRA_API_BASE_URL?.trim().replace(/\/$/, "") ||
+    process.env.JUP_API_BASE_URL?.trim().replace(/\/$/, "") ||
     DEFAULT_JUPITER_ULTRA_API_BASE_URL
   );
 }
@@ -26,18 +18,16 @@ export async function jupiterFetch<T>(
   path: string,
   init?: RequestInit,
   options?: {
-    kind?: "swap" | "ultra";
     requireApiKey?: boolean;
   },
 ): Promise<T> {
-  const kind = options?.kind ?? "ultra";
   const apiKey = getJupiterApiKey();
 
   if (options?.requireApiKey && !apiKey) {
     throw new Error("Missing JUP_API_KEY.");
   }
 
-  const response = await fetch(`${getJupiterApiBaseUrl(kind)}${path}`, {
+  const response = await fetch(`${getJupiterApiBaseUrl()}${path}`, {
     ...init,
     cache: "no-store",
     headers: {

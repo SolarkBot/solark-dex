@@ -4,6 +4,7 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { VersionedTransaction } from "@solana/web3.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  type JupiterExecuteResponse,
   normalizeOrderToQuote,
   type JupiterOrderResponse,
 } from "@/lib/jupiter";
@@ -15,7 +16,6 @@ import {
   type SwapQuote,
 } from "@/lib/mockSwap";
 import {
-  getWalletBalances,
   isValidMintAddress,
   resolveTokenConfig,
 } from "@/lib/solana";
@@ -95,6 +95,17 @@ function base64ToBytes(value: string) {
   }
 
   return bytes;
+}
+
+function bytesToBase64(value: Uint8Array) {
+  let binary = "";
+
+  for (let index = 0; index < value.length; index += 0x8000) {
+    const chunk = value.subarray(index, index + 0x8000);
+    binary += String.fromCharCode(...chunk);
+  }
+
+  return window.btoa(binary);
 }
 
 export function useSwapFlow() {
@@ -452,9 +463,6 @@ export function useSwapFlow() {
       setStatus("Approve the live Jupiter swap in your wallet.");
       setSequenceId((current) => current + 1);
 
-      const trackedTokens = [fromToken, toToken];
-      const beforeBalances = await getWalletBalances(connection, publicKey, trackedTokens);
-
       const orderParams = new URLSearchParams({
         amount: amountInBaseUnits,
         inputMint: fromToken.mint,
@@ -483,50 +491,46 @@ export function useSwapFlow() {
         base64ToBytes(order.transaction),
       );
       const signedTransaction = await signTransaction(unsignedTransaction);
-
-      if (executionRef.current !== executionId) {
-        return;
-      }
-
-      setStatus("Broadcasting signed swap to Solana.");
-
-      const signature = await connection.sendRawTransaction(
-        signedTransaction.serialize(),
-        {
-          maxRetries: 3,
-          preflightCommitment: "confirmed",
-        },
-      );
+      const signedTransactionBase64 = bytesToBase64(signedTransaction.serialize());
 
       if (executionRef.current !== executionId) {
         return;
       }
 
       setPhase("confirming");
-      setStatus("Transaction sent. Waiting for on-chain confirmation.");
+      setStatus("Submitting signed swap through Jupiter.");
 
-      await connection.confirmTransaction(
+      const execution = await fetchJson<JupiterExecuteResponse>(
+        "/api/jupiter/execute",
         {
-          blockhash: signedTransaction.message.recentBlockhash,
-          lastValidBlockHeight:
-            order.lastValidBlockHeight ??
-            (await connection.getLatestBlockhash("confirmed")).lastValidBlockHeight,
-          signature,
+          body: JSON.stringify({
+            requestId: order.requestId,
+            signedTransaction: signedTransactionBase64,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+          method: "POST",
         },
-        "confirmed",
       );
 
       if (executionRef.current !== executionId) {
         return;
       }
 
-      const afterBalances = await getWalletBalances(connection, publicKey, trackedTokens);
-      const gainedAmount = Math.max(
-        0,
-        (afterBalances[toToken.mint] ?? 0) - (beforeBalances[toToken.mint] ?? 0),
-      );
-      const receivedAmount =
-        gainedAmount > 0 ? gainedAmount : liveQuote.estimatedAmountOut;
+      if (execution.status !== "Success") {
+        throw new Error(execution.error || "Jupiter could not settle the signed swap.");
+      }
+
+      const outputBaseUnits =
+        execution.outputAmountResult ||
+        execution.totalOutputAmount ||
+        order.outAmount;
+      const receivedAmount = outputBaseUnits
+        ? Number.isFinite(Number(outputBaseUnits))
+          ? Number(outputBaseUnits) / 10 ** toToken.decimals
+          : liveQuote.estimatedAmountOut
+        : liveQuote.estimatedAmountOut;
 
       const nextReceipt: MockSwapResult = {
         amountIn: numericAmount,
@@ -535,7 +539,7 @@ export function useSwapFlow() {
         receivedLabel: formatTokenAmount(receivedAmount, toToken),
         fromToken,
         routeLabel: liveQuote.routeLabel,
-        signature,
+        signature: execution.signature || order.requestId,
         timestamp: new Date().toLocaleTimeString("en-US", {
           hour: "2-digit",
           minute: "2-digit",

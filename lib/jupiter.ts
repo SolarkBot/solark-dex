@@ -3,82 +3,73 @@ import { baseUnitsToDecimal, type TokenConfig } from "@/lib/tokens";
 
 export type JupiterOrderResponse = {
   errorCode?: number;
+  error?: string;
   errorMessage?: string;
   feeBps: number;
   inAmount: string;
+  inUsdValue?: number;
   inputMint: string;
+  gasless?: boolean;
+  mode?: string;
   otherAmountThreshold: string;
   outAmount: string;
+  outUsdValue?: number;
   outputMint: string;
-  priceImpact?: number;
-  priceImpactPct?: string;
-  requestId: string;
-  routePlan: Array<{
-    swapInfo?: {
-      label?: string;
-    };
-  }>;
-  router: string;
-  slippageBps: number;
-  simulationError?: {
-    error?: string;
-    errorCode?: string;
-  } | null;
-  transaction: string | null;
-  lastValidBlockHeight?: number;
-};
-
-export type JupiterSwapQuoteResponse = {
-  inputMint: string;
-  inAmount: string;
-  outputMint: string;
-  outAmount: string;
-  otherAmountThreshold: string;
-  slippageBps: number;
-  priceImpactPct?: string;
-  routePlan: Array<{
-    swapInfo?: {
-      label?: string;
-    };
-  }>;
   platformFee?: {
     feeBps?: number;
+    feeMint?: string;
   } | null;
-};
-
-export type JupiterSwapBuildResponse = {
+  priceImpact?: number;
+  priceImpactPct?: string;
+  prioritizationFeeLamports?: number;
+  requestId: string;
+  routePlan: Array<{
+    bps?: number;
+    percent?: number;
+    swapInfo?: {
+      ammKey?: string;
+      inAmount?: string;
+      inputMint?: string;
+      label?: string;
+      outAmount?: string;
+      outputMint?: string;
+    };
+    usdValue?: number;
+  }>;
+  signatureFeeLamports?: number;
+  swapType?: string;
+  swapUsdValue?: number;
+  taker?: string | null;
+  totalTime?: number;
+  router: string;
+  feeMint?: string;
+  rentFeeLamports?: number;
+  slippageBps: number;
+  transaction: string | null;
   lastValidBlockHeight?: number;
   simulationError?: {
     error?: string;
     errorCode?: string;
   } | null;
-  swapTransaction: string;
 };
 
-export function toOrderResponse(
-  quote: JupiterSwapQuoteResponse,
-  transaction: string | null,
-  requestId: string,
-  lastValidBlockHeight?: number,
-  simulationError?: JupiterOrderResponse["simulationError"],
-): JupiterOrderResponse {
-  return {
-    feeBps: quote.platformFee?.feeBps ?? 0,
-    inAmount: quote.inAmount,
-    inputMint: quote.inputMint,
-    lastValidBlockHeight,
-    otherAmountThreshold: quote.otherAmountThreshold,
-    outAmount: quote.outAmount,
-    outputMint: quote.outputMint,
-    priceImpactPct: quote.priceImpactPct,
-    requestId,
-    routePlan: quote.routePlan,
-    router: "swap-api",
-    simulationError,
-    slippageBps: quote.slippageBps,
-    transaction,
-  };
-}
+export type JupiterExecuteResponse = {
+  code: number;
+  error?: string;
+  inputAmountResult?: string;
+  outputAmountResult?: string;
+  signature?: string;
+  slot?: string;
+  status: "Success" | "Failed";
+  swapEvents?: Array<{
+    inputAmount?: string;
+    inputMint?: string;
+    outputAmount?: string;
+    outputMint?: string;
+  }>;
+  totalInputAmount?: string;
+  totalOutputAmount?: string;
+};
 
 export function normalizeOrderToQuote(
   order: JupiterOrderResponse,
@@ -109,7 +100,7 @@ export function normalizeOrderToQuote(
     exchangeRate,
     minimumReceived,
     priceImpactPct: Number.isFinite(rawPriceImpact) ? rawPriceImpact : 0,
-    provider: order.router === "swap-api" ? "Jupiter Swap" : "Jupiter Ultra",
+    provider: "Jupiter Ultra",
     requestId: order.requestId,
     routeFeePct: order.feeBps / 100,
     routeLabel:

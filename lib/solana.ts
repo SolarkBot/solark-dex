@@ -15,6 +15,8 @@ import {
 export const SOLANA_RPC_ENDPOINT =
   process.env.NEXT_PUBLIC_SOLANA_RPC_ENDPOINT?.trim() ||
   "https://solana-rpc.publicnode.com";
+export const SERVER_SOLANA_RPC_ENDPOINT =
+  process.env.SOLANA_RPC_ENDPOINT?.trim() || SOLANA_RPC_ENDPOINT;
 
 export const SOLANA_COMMITMENT: Commitment = "confirmed";
 const SPL_TOKEN_PROGRAM_ID = new PublicKey(
@@ -34,7 +36,12 @@ type JupiterTokenSearchItem = {
 };
 
 export function getSolanaConnection() {
-  return new Connection(SOLANA_RPC_ENDPOINT, SOLANA_COMMITMENT);
+  return new Connection(
+    typeof window === "undefined"
+      ? SERVER_SOLANA_RPC_ENDPOINT
+      : SOLANA_RPC_ENDPOINT,
+    SOLANA_COMMITMENT,
+  );
 }
 
 export function shortenAddress(

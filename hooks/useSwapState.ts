@@ -5,6 +5,7 @@ import { VersionedTransaction } from "@solana/web3.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   normalizeOrderToQuote,
+  type JupiterExecuteResponse,
   type JupiterOrderResponse,
 } from "@/lib/jupiter";
 import {
@@ -66,6 +67,17 @@ function base64ToBytes(value: string) {
   }
 
   return bytes;
+}
+
+function bytesToBase64(value: Uint8Array) {
+  let binary = "";
+
+  for (let index = 0; index < value.length; index += 0x8000) {
+    const chunk = value.subarray(index, index + 0x8000);
+    binary += String.fromCharCode(...chunk);
+  }
+
+  return window.btoa(binary);
 }
 
 export function useSwapState() {
@@ -460,42 +472,40 @@ export function useSwapState() {
         base64ToBytes(order.transaction),
       );
       const signedTransaction = await signTransaction(unsignedTransaction);
+      const signedTransactionBase64 = bytesToBase64(signedTransaction.serialize());
 
       setPhase("approach");
-      setStatus("Signature captured. Broadcasting transaction to Solana.");
+      setStatus("Signature captured. Sending execution back to Jupiter.");
 
       await sleep(450);
       if (executionRef.current !== executionId) {
         return;
       }
 
-      const rawTransaction = signedTransaction.serialize();
-      const signature = await connection.sendRawTransaction(rawTransaction, {
-        maxRetries: 3,
-        preflightCommitment: "confirmed",
-      });
+      const execution = await fetchJson<JupiterExecuteResponse>(
+        "/api/jupiter/execute",
+        {
+          body: JSON.stringify({
+            requestId: order.requestId,
+            signedTransaction: signedTransactionBase64,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+          method: "POST",
+        },
+      );
+
+      if (execution.status !== "Success") {
+        throw new Error(execution.error || "The signed swap could not be settled.");
+      }
 
       setPhase("exchange");
-      setStatus("Transaction submitted. Waiting for on-chain confirmation.");
+      setStatus("Jupiter is confirming the signed swap.");
 
       await sleep(900);
       if (executionRef.current !== executionId) {
         return;
-      }
-
-      const confirmation = await connection.confirmTransaction(
-        {
-          blockhash: signedTransaction.message.recentBlockhash,
-          lastValidBlockHeight:
-            order.lastValidBlockHeight ??
-            (await connection.getLatestBlockhash("confirmed")).lastValidBlockHeight,
-          signature,
-        },
-        "confirmed",
-      );
-
-      if (confirmation.value.err) {
-        throw new Error("The swap transaction was rejected on-chain.");
       }
 
       const receipt: SwapReceipt = {
@@ -504,9 +514,13 @@ export function useSwapState() {
           minute: "2-digit",
           second: "2-digit",
         }),
-        outputAmount: preparedSwap.quote.estimatedAmountOut,
+        outputAmount:
+          execution.outputAmountResult &&
+          Number.isFinite(Number(execution.outputAmountResult))
+            ? Number(execution.outputAmountResult) / 10 ** preparedSwap.toToken.decimals
+            : preparedSwap.quote.estimatedAmountOut,
         priceImpactPct: preparedSwap.quote.priceImpactPct,
-        signature,
+        signature: execution.signature || order.requestId,
         toToken: preparedSwap.toToken,
       };
 

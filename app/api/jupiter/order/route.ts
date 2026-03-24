@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
 import { jupiterFetch } from "@/lib/jupiter-server";
-import {
-  toOrderResponse,
-  type JupiterOrderResponse,
-  type JupiterSwapBuildResponse,
-  type JupiterSwapQuoteResponse,
-} from "@/lib/jupiter";
+import { type JupiterOrderResponse } from "@/lib/jupiter";
 
 export async function GET(request: Request) {
   try {
@@ -37,47 +32,13 @@ export async function GET(request: Request) {
       upstreamParams.set("taker", taker);
     }
 
-    const quote = await jupiterFetch<JupiterSwapQuoteResponse>(
-      `/quote?${upstreamParams.toString()}`,
+    const order = await jupiterFetch<JupiterOrderResponse>(
+      `/order?${upstreamParams.toString()}`,
       undefined,
-      { kind: "swap" },
+      { requireApiKey: true },
     );
 
-    if (!taker) {
-      return NextResponse.json(
-        toOrderResponse(quote, null, crypto.randomUUID()),
-      );
-    }
-
-    const swap = await jupiterFetch<JupiterSwapBuildResponse>(
-      "/swap",
-      {
-        body: JSON.stringify({
-          dynamicComputeUnitLimit: true,
-          dynamicSlippage: true,
-          prioritizationFeeLamports: {
-            priorityLevelWithMaxLamports: {
-              maxLamports: 1_000_000,
-              priorityLevel: "veryHigh",
-            },
-          },
-          quoteResponse: quote,
-          userPublicKey: taker,
-        }),
-        method: "POST",
-      },
-      { kind: "swap" },
-    );
-
-    return NextResponse.json(
-      toOrderResponse(
-        quote,
-        swap.swapTransaction,
-        crypto.randomUUID(),
-        swap.lastValidBlockHeight,
-        swap.simulationError,
-      ) satisfies JupiterOrderResponse,
-    );
+    return NextResponse.json(order);
   } catch (error) {
     return NextResponse.json(
       {
