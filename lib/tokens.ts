@@ -22,7 +22,6 @@ export type TokenConfig = {
 
 type PresetTokenInput = {
   decimals: number;
-  iconId?: string;
   logoUri?: string | null;
   marketLabel: string;
   mint: string;
@@ -33,10 +32,6 @@ type PresetTokenInput = {
 
 function buildFallbackLogoUri(mint: string) {
   return `https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/${mint}/logo.png`;
-}
-
-function buildDexScreenerLogoUri(iconId: string) {
-  return `https://cdn.dexscreener.com/cms/images/${iconId}?width=64&height=64&fit=crop&quality=95&format=auto`;
 }
 
 function hashString(value: string) {
@@ -129,9 +124,7 @@ function buildPresetToken(input: PresetTokenInput) {
   return {
     decimals: input.decimals,
     isPreset: true,
-    logoUri:
-      input.logoUri ??
-      (input.iconId ? buildDexScreenerLogoUri(input.iconId) : buildFallbackLogoUri(input.mint)),
+    logoUri: input.logoUri ?? buildFallbackLogoUri(input.mint),
     marketLabel: input.marketLabel,
     mint: input.mint,
     name: input.name.trim(),
@@ -139,90 +132,6 @@ function buildPresetToken(input: PresetTokenInput) {
     visual: input.visual ?? inferVisual(symbol, input.mint),
   } satisfies TokenConfig;
 }
-
-// DexScreener Solana H24 trending snapshot confirmed on March 23, 2026.
-const TRENDING_MEME_SNAPSHOT = [
-  {
-    symbol: "DRONGO",
-    name: "The Dino",
-    mint: "H5aYB8F9zUJERDeojp2TXxph7azDPbghD93cbdTtpump",
-    decimals: 6,
-    iconId: "-uIz76B5k7hGlqfK",
-    marketLabel: "H24 trending meme #1",
-  },
-  {
-    symbol: "FML",
-    name: "FML",
-    mint: "3BHhMXMyyGGzLcTk6u5iJwTcV7eEGG9bWJrTKUttpump",
-    decimals: 6,
-    iconId: "3kK0_J6hFCGlr_4Z",
-    marketLabel: "H24 trending meme #2",
-  },
-  {
-    symbol: "ONE",
-    name: "if memecoins have a million fans",
-    mint: "3mecmcGqs4q9RMzFKZFZTBEcbtA7SPFKPKb9kDvxpump",
-    decimals: 6,
-    iconId: "yPekikD6t-IhEMmD",
-    marketLabel: "H24 trending meme #3",
-  },
-  {
-    symbol: "CHIBIBEAST",
-    name: "ChibiBeast",
-    mint: "Eeu8L2XkkJM9RtNtg8KTvgBNEu2UGctd2WYhRYX2pump",
-    decimals: 6,
-    iconId: "44ZBbLts0FOcdtZJ",
-    marketLabel: "H24 trending meme #4",
-  },
-  {
-    symbol: "LOL",
-    name: "LOL",
-    mint: "34q2KmCvapecJgR6ZrtbCTrzZVtkt3a5mHEA3TuEsWYb",
-    decimals: 6,
-    iconId: "BpQQ3PtlWg_igPYC",
-    marketLabel: "H24 trending meme #5",
-  },
-  {
-    symbol: "CHIBI",
-    name: "Chibification",
-    mint: "2TpMjYXnrgxoeVCq2i6EAR8vNWqe5MNvHCz3bENNpump",
-    decimals: 6,
-    iconId: "J2K1cuDDHFVBnihP",
-    marketLabel: "H24 trending meme #6",
-  },
-  {
-    symbol: "OPTIMISTIC",
-    name: "Optimistic Minion",
-    mint: "2pjcq9k2X5oSArNKiVeQ2ENB63eJt8pwCabciGQGpump",
-    decimals: 6,
-    iconId: "gSDppvXZ0s12SCT6",
-    marketLabel: "H24 trending meme #7",
-  },
-  {
-    symbol: "PEACE",
-    name: "World Peace",
-    mint: "atVjZ7uM8sVrLFi5Xe1JiLGW6mW9pvQdTCWzhNFpump",
-    decimals: 6,
-    iconId: "D7uwaqqUb_pLb7wu",
-    marketLabel: "H24 trending meme #8",
-  },
-  {
-    symbol: "LOST",
-    name: "Pumpfun ruined my life",
-    mint: "n3ShrNZRCoMrw5Gww7rPMxVbDq3to3YwsGkDz19pump",
-    decimals: 6,
-    iconId: "3RAPDWtnWQxPnSym",
-    marketLabel: "H24 trending meme #9",
-  },
-  {
-    symbol: "PIKAHORSE",
-    name: "Godzillabigtitzonpikahorse",
-    mint: "BkUWLJXVwYswqb7NSHNCLdwRjPi8bQ2Z4YzuRaQpump",
-    decimals: 6,
-    iconId: "UAOVM2fY6hr9fKgA",
-    marketLabel: "H24 trending meme #10",
-  },
-] as const satisfies readonly PresetTokenInput[];
 
 export const PRESET_TOKENS: TokenConfig[] = [
   buildPresetToken({
@@ -278,7 +187,62 @@ export const PRESET_TOKENS: TokenConfig[] = [
       glow: "#5fe8ff",
     },
   }),
-  ...TRENDING_MEME_SNAPSHOT.map((token) => buildPresetToken(token)),
+  buildPresetToken({
+    symbol: "DUPE",
+    name: "Dupe",
+    marketLabel: "Curated ecosystem token",
+    mint: "fRfKGCriduzDwSudCwpL7ySCEiboNuryhZDVJtr1a1C",
+    decimals: 9,
+    logoUri: "https://ipfs.io/ipfs/bafkreiaobt2ookhhoslvvard6oyjc6fw4askhg232yh22aqcgdddhrbcdy",
+  }),
+  buildPresetToken({
+    symbol: "KLED",
+    name: "KLEDAI",
+    marketLabel: "Curated ecosystem token",
+    mint: "1zJX5gRnjLgmTpq5sVwkq69mNDQkCemqoasyjaPW6jm",
+    decimals: 9,
+    logoUri: "https://ipfs.io/ipfs/bafkreicxgl43yyi3xg3zvi4hxsqmsobwxm7kto7i4qrbk75i2ff7w4jebe",
+  }),
+  buildPresetToken({
+    symbol: "GRIFFAIN",
+    name: "Griffain",
+    marketLabel: "Curated ecosystem token",
+    mint: "KENJSUYLASHUMfHyy5o4Hp2FdNqZg1AsUPhfH2kYvEP",
+    decimals: 6,
+    logoUri: "https://griffain.com/logo.png",
+  }),
+  buildPresetToken({
+    symbol: "AVA",
+    name: "Ava AI",
+    marketLabel: "Curated ecosystem token",
+    mint: "DKu9kykSfbN5LBfFXtNNDPaX35o4Fv6vJ9FKk7pZpump",
+    decimals: 6,
+    logoUri: "https://ipfs.io/ipfs/QmQdYxGMCLEZqWpgKo8BREBa5YSUbxFu6qaWiVXUW1yUhg",
+  }),
+  buildPresetToken({
+    symbol: "SURGE",
+    name: "SURGE",
+    marketLabel: "Curated ecosystem token",
+    mint: "3z2tRjNuQjoq6UDcw4zyEPD1Eb5KXMPYb4GWFzVT1DPg",
+    decimals: 8,
+    logoUri: "https://tokens.debridge.finance/0xaa9984487dacdc008d6bcd2adf21988388cc20d08b7594a1a96d812dab7f6605.png",
+  }),
+  buildPresetToken({
+    symbol: "UMBRA",
+    name: "Umbra",
+    marketLabel: "Curated ecosystem token",
+    mint: "PRVT6TB7uss3FrUd2D9xs2zqDBsa3GbMJMwCQsgmeta",
+    decimals: 6,
+    logoUri: "https://raw.githubusercontent.com/metaDAOproject/futarchy/refs/heads/develop/scripts/assets/UMBRA/UMBRA.png",
+  }),
+  buildPresetToken({
+    symbol: "DREAMS",
+    name: "Daydreams",
+    marketLabel: "Curated ecosystem token",
+    mint: "GMzuntWYJLpNuCizrSR7ZXggiMdDzTNiEmSNHHunpump",
+    decimals: 6,
+    logoUri: "https://ipfs.io/ipfs/QmPfRkbzpiBtH34ooJLPKGHsUtc6kswBy1owqbF5Hmn6uf",
+  }),
 ];
 
 export const PRESET_TOKEN_BY_SYMBOL = PRESET_TOKENS.reduce(

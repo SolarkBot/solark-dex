@@ -5,6 +5,7 @@ import { VersionedTransaction } from "@solana/web3.js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   type JupiterExecuteResponse,
+  getPreviewOrderError,
   normalizeOrderToQuote,
   type JupiterOrderResponse,
 } from "@/lib/jupiter";
@@ -156,8 +157,28 @@ function getSwapFailureDetails(caughtError: unknown) {
   if (normalized.includes("did not return a signable transaction")) {
     return {
       error: "Jupiter did not return a signable transaction for this route.",
-      shouldRecoverToReady: true,
-      status: "Route build failed. The quote is still ready to retry.",
+      shouldRecoverToReady: false,
+      status: "No executable route for this pair and amount right now.",
+    };
+  }
+
+  if (
+    normalized.includes("failed to get quotes") ||
+    normalized.includes("no route") ||
+    normalized.includes("could not find any route")
+  ) {
+    return {
+      error: "No executable route found for this pair and amount right now.",
+      shouldRecoverToReady: false,
+      status: "Try a different pair, amount, or slippage.",
+    };
+  }
+
+  if (normalized.includes("insufficient funds")) {
+    return {
+      error: "Insufficient balance for this swap amount and network fees.",
+      shouldRecoverToReady: false,
+      status: "Wallet balance too low for this route.",
     };
   }
 
@@ -413,6 +434,12 @@ export function useSwapFlow() {
           return;
         }
 
+        const previewOrderError = getPreviewOrderError(order, toToken);
+
+        if (previewOrderError) {
+          throw new Error(previewOrderError);
+        }
+
         const nextQuote = normalizeOrderToQuote(order, fromToken, toToken, numericAmount);
         setQuote(nextQuote);
         setQuoteContext({
@@ -604,8 +631,8 @@ export function useSwapFlow() {
       phaseTimersRef.current = [];
       setError(null);
       setReceipt(null);
-      setPhase("signing");
-      setStatus("Approve the live Jupiter swap in your wallet.");
+      setPhase("confirming");
+      setStatus("Requesting a signable transaction from Jupiter.");
       setSequenceId((current) => current + 1);
 
       const orderParams = new URLSearchParams({
@@ -637,6 +664,8 @@ export function useSwapFlow() {
         outputMint: toToken.mint,
       });
 
+      setPhase("signing");
+      setStatus("Approve the live Jupiter swap in your wallet.");
       const unsignedTransaction = VersionedTransaction.deserialize(
         base64ToBytes(order.transaction),
       );

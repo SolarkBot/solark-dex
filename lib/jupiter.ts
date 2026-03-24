@@ -71,6 +71,49 @@ export type JupiterExecuteResponse = {
   totalOutputAmount?: string;
 };
 
+const MINIMUM_USEFUL_QUOTE_USD = 0.01;
+
+export function getPreviewOrderError(
+  order: JupiterOrderResponse,
+  toToken: TokenConfig,
+) {
+  if (order.errorCode) {
+    return order.errorMessage?.trim() || order.error?.trim() || "No route for this pair right now.";
+  }
+
+  if (order.errorMessage?.trim()) {
+    return order.errorMessage.trim();
+  }
+
+  if (!order.requestId?.trim()) {
+    return "Jupiter did not return a valid quote request id.";
+  }
+
+  if (!/^\d+$/.test(order.outAmount)) {
+    return "No route for this pair right now.";
+  }
+
+  if (!Array.isArray(order.routePlan) || order.routePlan.length === 0) {
+    return "No route for this pair right now.";
+  }
+
+  const estimatedAmountOut = baseUnitsToDecimal(order.outAmount, toToken.decimals);
+
+  if (estimatedAmountOut <= 0) {
+    return "No route for this pair and amount right now.";
+  }
+
+  if (
+    typeof order.outUsdValue === "number" &&
+    Number.isFinite(order.outUsdValue) &&
+    order.outUsdValue < MINIMUM_USEFUL_QUOTE_USD
+  ) {
+    return "Amount is too small for a useful quote on this pair.";
+  }
+
+  return null;
+}
+
 export function normalizeOrderToQuote(
   order: JupiterOrderResponse,
   fromToken: TokenConfig,
